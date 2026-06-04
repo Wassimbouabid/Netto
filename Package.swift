@@ -11,10 +11,15 @@ let package = Package(
             name: "NetworkLayer",
             targets: ["NetworkLayer"]),
     ],
-    dependencies: [],
+    dependencies: [
+        .package(url: "https://github.com/Alamofire/Alamofire.git", from: "5.9.0")
+    ],
     targets: [
         .target(
             name: "NetworkLayer",
+            dependencies: [
+                .product(name: "Alamofire", package: "Alamofire")
+            ],
             path: "LibraryCore/NetworkLayer/Sources/NetworkLayer"
         ),
     ]
