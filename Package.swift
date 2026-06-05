@@ -12,13 +12,15 @@ let package = Package(
             targets: ["NetworkLayer"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/Alamofire/Alamofire.git", from: "5.9.0")
+        .package(url: "https://github.com/Alamofire/Alamofire.git", from: "5.9.0"),
+        .package(url: "https://github.com/CocoaLumberjack/CocoaLumberjack.git", from: "3.8.0")
     ],
     targets: [
         .target(
             name: "NetworkLayer",
             dependencies: [
-                .product(name: "Alamofire", package: "Alamofire")
+                .product(name: "Alamofire", package: "Alamofire"),
+                .product(name: "CocoaLumberjackSwift", package: "CocoaLumberjack")
             ],
             path: "LibraryCore/NetworkLayer/Sources/NetworkLayer"
         ),
