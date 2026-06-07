@@ -60,3 +60,47 @@ public enum ParameterEncoding {
     /// Provide a closure that mutates the `URLRequest` directly (escape hatch for exotic encodings).
     case custom((inout URLRequest) throws -> Void)
 }
+
+// MARK: - APIRequest
+
+/// A fully-prepared network request, built from an `APIEndpoint` plus the base URL.
+///
+/// Passed directly to `NetworkLogger` methods so custom loggers have access to the
+/// complete request context (method, URL, headers, parameters, timeout, encoding).
+public struct APIRequest {
+    public let url: String
+    public let method: HTTPMethod
+    public let parameters: [String: Any]?
+    public let encoding: ParameterEncoding
+    public var headers: [String: String]?
+    public let timeout: TimeInterval?
+
+    public init(endpoint: any APIEndpoint, baseURL: URL) {
+        let base = baseURL.absoluteString
+            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        let path = endpoint.path
+            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+
+        self.url        = "\(base)/\(path)"
+        self.method     = endpoint.method
+        self.parameters = endpoint.parameters
+        self.encoding   = endpoint.encoding
+        self.headers    = endpoint.headers
+        self.timeout    = endpoint.timeout
+    }
+
+    /// Creates a minimal GET request from a fully-qualified URL string.
+    ///
+    /// Used by `MediaDownloadServiceImpl` to pass a media URL through the
+    /// `PreRequestHandler` pipeline (e.g. to attach an `Authorization` header)
+    /// without requiring an `APIEndpoint` or a base-URL split.
+    public init(rawURL: String) {
+        self.url        = rawURL
+        self.method     = .get
+        self.parameters = nil
+        self.encoding   = .url
+        self.headers    = nil
+        self.timeout    = nil
+    }
+
+}
