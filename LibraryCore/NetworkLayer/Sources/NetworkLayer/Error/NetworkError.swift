@@ -73,3 +73,121 @@ public indirect enum NetworkError: Error, Equatable {
         }
     }
 }
+
+// MARK: - LocalizedError
+
+extension NetworkError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        // Connection Errors
+        case .noInternet:
+            return "No internet connection. Please check your network and try again."
+
+        case .timeout:
+            return "Connection timed out. Please check your internet connection and try again."
+
+        case .hostNotFound:
+            return "Server not found. You can continue working offline, and your changes will sync when the server is back."
+
+        case .serverUnreachable:
+            return "Server is currently unavailable. You can continue working offline, and your changes will sync when the server is back."
+
+        case .networkConnectionLost:
+            return "Network connection lost. Please check your connection and try again."
+
+        case .sslError:
+            return "Secure connection failed. Please try again."
+
+        // Request Errors
+        case .invalidURL:
+            return "Invalid server address. Please contact support."
+
+        case .invalidData:
+            return "Invalid data format. Please try again."
+
+        case .requestCancelled:
+            return "Request was cancelled."
+
+        // Response Errors
+        case .decodingError(let details):
+            return "Failed to process server response: \(details)"
+
+        case .emptyResponse:
+            return "Server returned no data. Please try again."
+
+        case .invalidResponse:
+            return "Invalid server response. Please try again."
+
+        // HTTP Status Code Errors
+        case .badRequest(let message, _, _):
+            return message ?? "Invalid request. Please try again."
+
+        case .authenticationRequired(let message, _):
+            return message ?? "Authentication required. You can still work offline."
+
+        case .forbidden(let message, _):
+            return message ?? "Access denied."
+
+        case .notFound:
+            return "Resource not found."
+
+        case .methodNotAllowed:
+            return "Operation not allowed."
+
+        case .serverError(let statusCode, let message, _) where statusCode >= 500:
+            return message ?? "Server is experiencing issues. You can continue working offline."
+
+        case .serverError(_, let message, _):
+            return message ?? "Server error. Please try again."
+
+        // Domain Error
+        case .domainError(_, let underlyingError):
+            return underlyingError.localizedDescription
+
+        // Unknown
+        case .unknown(let underlying):
+            return underlying?.localizedDescription ?? "An unexpected error occurred. Please try again."
+        }
+    }
+}
+
+// MARK: - Error Classification
+
+extension NetworkError {
+    /// Returns true for infrastructure errors (HTTP, connectivity)
+    public var isInfrastructureError: Bool {
+        switch self {
+        case .noInternet, .timeout, .hostNotFound, .serverUnreachable, .networkConnectionLost, .sslError,
+             .invalidURL, .invalidData, .requestCancelled, .decodingError, .emptyResponse, .invalidResponse,
+             .badRequest, .authenticationRequired, .forbidden, .notFound, .methodNotAllowed, .serverError,
+             .unknown:
+            return true
+        case .domainError:
+            return false
+        }
+    }
+
+    /// Returns true if server is down/unreachable
+    public var isServerDownError: Bool {
+        switch self {
+        case .serverUnreachable, .hostNotFound, .timeout:
+            return true
+        case .serverError(let code, _, _) where code >= 500:
+            return true
+        default:
+            return false
+        }
+    }
+
+    /// Returns true if user can work offline
+    public var supportsOfflineMode: Bool {
+        switch self {
+        case .noInternet, .serverUnreachable, .hostNotFound, .timeout, .networkConnectionLost:
+            return true
+        case .serverError(let code, _, _) where code >= 500:
+            return true
+        default:
+            return false
+        }
+    }
+}
