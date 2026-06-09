@@ -191,3 +191,50 @@ extension NetworkError {
         }
     }
 }
+
+// MARK: - Equatable
+
+public extension NetworkError {
+    static func == (lhs: NetworkError, rhs: NetworkError) -> Bool {
+        switch (lhs, rhs) {
+        case (.noInternet, .noInternet),
+             (.timeout, .timeout),
+             (.hostNotFound, .hostNotFound),
+             (.serverUnreachable, .serverUnreachable),
+             (.networkConnectionLost, .networkConnectionLost),
+             (.sslError, .sslError),
+             (.invalidURL, .invalidURL),
+             (.invalidData, .invalidData),
+             (.emptyResponse, .emptyResponse),
+             (.invalidResponse, .invalidResponse),
+             (.requestCancelled, .requestCancelled),
+             (.notFound, .notFound),
+             (.methodNotAllowed, .methodNotAllowed):
+            return true
+
+        case (.decodingError(let lhsDetails), .decodingError(let rhsDetails)):
+            return lhsDetails == rhsDetails
+
+        case (.badRequest(let lhsMsg, let lhsCode, _), .badRequest(let rhsMsg, let rhsCode, _)):
+            return lhsMsg == rhsMsg && lhsCode == rhsCode
+
+        case (.authenticationRequired(let lhsMsg, _), .authenticationRequired(let rhsMsg, _)):
+            return lhsMsg == rhsMsg
+
+        case (.forbidden(let lhsMsg, _), .forbidden(let rhsMsg, _)):
+            return lhsMsg == rhsMsg
+
+        case (.serverError(let lhsCode, let lhsMsg, _), .serverError(let rhsCode, let rhsMsg, _)):
+            return lhsCode == rhsCode && lhsMsg == rhsMsg
+
+        case (.domainError(let lhsCtx, _), .domainError(let rhsCtx, _)):
+            return lhsCtx == rhsCtx
+
+        case (.unknown, .unknown):
+            return true
+
+        default:
+            return false
+        }
+    }
+}
