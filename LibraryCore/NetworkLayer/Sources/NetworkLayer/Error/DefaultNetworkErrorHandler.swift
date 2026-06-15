@@ -103,3 +103,76 @@ final class DefaultNetworkErrorHandler: NetworkErrorHandler {
         }
     }
 }
+
+// MARK: - Private Helpers
+
+private extension DefaultNetworkErrorHandler {
+    func handleAFError(_ error: AFError, responseHeaders: [String: String]?) -> NetworkError {
+        // handle underlying URL errors first
+        if let urlError = error.underlyingError as? URLError {
+            return handleURLError(urlError)
+        }
+
+        switch error {
+        case .responseValidationFailed(let reason):
+            if case .unacceptableStatusCode(let code) = reason {
+                return errorForStatusCode(code, data: nil, headers: responseHeaders)
+            }
+            return .invalidResponse
+
+        case .responseSerializationFailed:
+            return .decodingError("Failed to deserialize response")
+
+        case .sessionTaskFailed(let error):
+            if let nsError = error as NSError?, nsError.domain == NSURLErrorDomain {
+                return handleNSURLError(nsError.code)
+            }
+            return .unknown(underlying: error)
+
+        case .createUploadableFailed, .createURLRequestFailed, .multipartEncodingFailed,
+             .parameterEncodingFailed:
+            return .invalidData
+
+        case .urlRequestValidationFailed:
+            return .invalidURL
+
+        case .serverTrustEvaluationFailed:
+            return .sslError
+
+        default:
+            return .unknown(underlying: error)
+        }
+    }
+
+    func handleURLError(_ error: URLError) -> NetworkError {
+        return handleNSURLError(error.code.rawValue)
+    }
+
+    func handleNSURLError(_ code: Int) -> NetworkError {
+        switch code {
+        case NSURLErrorNotConnectedToInternet:
+            return .noInternet
+        case NSURLErrorTimedOut:
+            return .timeout
+        case NSURLErrorCannotFindHost, NSURLErrorDNSLookupFailed:
+            return .hostNotFound
+        case NSURLErrorCannotConnectToHost:
+            return .serverUnreachable
+        case NSURLErrorNetworkConnectionLost:
+            return .networkConnectionLost
+        case NSURLErrorCancelled:
+            return .requestCancelled
+        case NSURLErrorBadURL, NSURLErrorUnsupportedURL:
+            return .invalidURL
+        case NSURLErrorSecureConnectionFailed, NSURLErrorServerCertificateHasBadDate,
+             NSURLErrorServerCertificateNotYetValid, NSURLErrorServerCertificateUntrusted:
+            return .sslError
+        default:
+            return .unknown(underlying: NSError(domain: NSURLErrorDomain, code: code))
+        }
+    }
+
+    func extractErrorMessage(from data: Data) -> String? {
+        errorResponseParser.extractMessage(from: data)
+    }
+}
