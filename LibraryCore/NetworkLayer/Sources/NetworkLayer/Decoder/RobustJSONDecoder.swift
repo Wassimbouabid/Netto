@@ -85,3 +85,76 @@ extension KeyedDecodingContainer {
         return try? decodeIfPresent(type, forKey: key) ?? nil
     }
 }
+
+// MARK: - Custom JSON Decoder
+
+/// A decoder that doesn't crash on typical JSON decoding errors
+class RobustJSONDecoder: JSONDecoder {
+    override func decode<T>(_ type: T.Type, from data: Data) throws -> T where T : Decodable {
+        do {
+            return try super.decode(type, from: data)
+        } catch let decodingError as DecodingError {
+            // Handle errors that we can recover from
+            switch decodingError {
+            case .valueNotFound(let valueType, let context):
+                // If a non-optional value is null in the JSON, try to provide a default value
+                if DefaultValueProvider(for: valueType) != nil {
+                    if let extendedType = T.self as? DefaultValueProvidable.Type,
+                       let rectifiedInstance = try? extendedType.createWithDefaults(from: data, error: decodingError, using: self) {
+                        // If our type can handle missing values
+                        if let result = rectifiedInstance as? T {
+                            return result
+                        }
+                    }
+                }
+                // If we can't recover, rethrow with better context
+                throw EnhancedDecodingError.enhanceValueNotFound(
+                    valueType, context: context,
+                    message: "JSON contained null for non-optional value"
+                )
+
+            case .keyNotFound(let key, let context):
+                // If a required key is missing, try to provide a default value
+                if let extendedType = T.self as? DefaultValueProvidable.Type,
+                   let rectifiedInstance = try? extendedType.createWithDefaults(from: data, error: decodingError, using: self) {
+                    // If our type can handle missing keys
+                    if let result = rectifiedInstance as? T {
+                        return result
+                    }
+                }
+                // If we can't recover, rethrow with better context
+                throw EnhancedDecodingError.enhanceKeyNotFound(
+                    key, context: context,
+                    message: "JSON missing required key '\(key.stringValue)'"
+                )
+
+            case .typeMismatch(let type, let context):
+                // Try to recover from type mismatches by using a type converter
+                if let extendedType = T.self as? TypeMismatchRecoverable.Type,
+                   let rectifiedInstance = try? extendedType.recoverFromTypeMismatch(from: data, expected: type, context: context, using: self) {
+                    if let result = rectifiedInstance as? T {
+                        return result
+                    }
+                }
+                // If we can't recover, rethrow with better context
+                throw EnhancedDecodingError.enhanceTypeMismatch(
+                    type, context: context,
+                    message: "JSON contained wrong type for '\(context.codingPath.map { $0.stringValue }.joined(separator: "."))'"
+                )
+
+            case .dataCorrupted(let context):
+                // We generally can't recover from corrupted data
+                throw EnhancedDecodingError.enhanceDataCorrupted(
+                    context: context,
+                    message: "JSON data is corrupted or malformed"
+                )
+
+            @unknown default:
+                throw decodingError
+            }
+        } catch {
+            // Handle other errors
+            throw error
+        }
+    }
+}
