@@ -158,3 +158,68 @@ class RobustJSONDecoder: JSONDecoder {
         }
     }
 }
+
+// MARK: - Protocols for Default Values and Type Conversion
+
+/// Protocol for types that can create themselves with default values
+protocol DefaultValueProvidable {
+    static func createWithDefaults(from data: Data, error: DecodingError, using decoder: JSONDecoder) throws -> Any
+}
+
+/// Protocol for types that can recover from type mismatches
+protocol TypeMismatchRecoverable {
+    static func recoverFromTypeMismatch(from data: Data, expected: Any.Type, context: DecodingError.Context, using decoder: JSONDecoder) throws -> Any
+}
+
+/// Helper for providing default values for basic types
+struct DefaultValueProvider {
+    let getValue: () -> Any
+
+    init?(for type: Any.Type) {
+        switch type {
+        case is String.Type:
+            getValue = { "" }
+        case is Int.Type:
+            getValue = { 0 }
+        case is Double.Type:
+            getValue = { 0.0 }
+        case is Bool.Type:
+            getValue = { false }
+        case is [String].Type:
+            getValue = { [] as [String] }
+        case is [Int].Type:
+            getValue = { [] as [Int] }
+        case is [Double].Type:
+            getValue = { [] as [Double] }
+        case is [String: String].Type:
+            getValue = { [:] as [String: String] }
+        case is [String: Any].Type:
+            getValue = { [:] as [String: Any] }
+        default:
+            return nil
+        }
+    }
+}
+
+// MARK: - Enhanced Error Types
+
+/// Enhanced decoding errors with better context
+enum EnhancedDecodingError: Error, LocalizedError {
+    case enhanceValueNotFound(Any.Type, context: DecodingError.Context, message: String)
+    case enhanceKeyNotFound(CodingKey, context: DecodingError.Context, message: String)
+    case enhanceTypeMismatch(Any.Type, context: DecodingError.Context, message: String)
+    case enhanceDataCorrupted(context: DecodingError.Context, message: String)
+
+    var errorDescription: String? {
+        switch self {
+        case .enhanceValueNotFound(let type, let context, let message):
+            return "\(message). Expected type: \(type). Path: \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+        case .enhanceKeyNotFound(let key, let context, let message):
+            return "\(message). Path: \(context.codingPath.map { $0.stringValue }.joined(separator: ".")).\(key.stringValue)"
+        case .enhanceTypeMismatch(let type, _, let message):
+            return "\(message). Expected type: \(type)"
+        case .enhanceDataCorrupted(let context, let message):
+            return "\(message). Path: \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+        }
+    }
+}
