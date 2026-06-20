@@ -131,3 +131,52 @@ public final class KeychainTokenStorage: TokenStorage {
         }
     }
 }
+
+// MARK: - Private Keychain Helpers
+
+private extension KeychainTokenStorage {
+
+    func readKeychainValue(for key: String) -> String? {
+        let query: [String: Any] = [
+            kSecClass as String:       kSecClassGenericPassword,
+            kSecAttrAccount as String: key,
+            kSecReturnData as String:  true,
+            kSecMatchLimit as String:  kSecMatchLimitOne
+        ]
+
+        var ref: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &ref)
+
+        guard status == errSecSuccess, let data = ref as? Data else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    /// Saves `value` to the Keychain under `key`.
+    ///
+    /// - Throws: `KeychainError.saveFailed` when `SecItemAdd` returns a non-success status.
+    func saveKeychainValue(_ value: String, for key: String) throws {
+        let data = Data(value.utf8)
+        let query: [String: Any] = [
+            kSecClass as String:       kSecClassGenericPassword,
+            kSecAttrAccount as String: key,
+            kSecValueData as String:   data
+        ]
+
+        // Remove any existing item first to avoid duplicate-item errors.
+        SecItemDelete(query as CFDictionary)
+
+        let status = SecItemAdd(query as CFDictionary, nil)
+        guard status == errSecSuccess else {
+            DDLogError("[KeychainTokenStorage] SecItemAdd failed for key '\(key)' — OSStatus: \(status)")
+            throw KeychainError.saveFailed(status)
+        }
+    }
+
+    func deleteKeychainValue(for key: String) {
+        let query: [String: Any] = [
+            kSecClass as String:       kSecClassGenericPassword,
+            kSecAttrAccount as String: key
+        ]
+        SecItemDelete(query as CFDictionary)
+    }
+}
