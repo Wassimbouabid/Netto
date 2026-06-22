@@ -108,3 +108,23 @@ actor PreRequestHandlerImpl: PreRequestHandler {
         refreshState = .none
     }
 }
+
+// MARK: - Supporting Types
+
+private extension PreRequestHandlerImpl {
+
+    /// State machine for deduplicating concurrent refresh requests.
+    ///
+    /// ```
+    /// ┌──────┐  start refresh  ┌────────────┐
+    /// │ none │────────────────▶│ refreshing │
+    /// └──────┘                 └────────────┘
+    ///    ▲                            │
+    ///    │      complete/error        │
+    ///    └────────────────────────────┘
+    /// ```
+    enum RefreshState {
+        case none
+        case refreshing(Task<String, Error>)
+    }
+}
