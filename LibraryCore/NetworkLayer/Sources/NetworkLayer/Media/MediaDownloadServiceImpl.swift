@@ -85,3 +85,67 @@ final class MediaDownloadServiceImpl: MediaDownloadService {
         return results
     }
 }
+
+// MARK: - Private Helpers
+
+private extension MediaDownloadServiceImpl {
+
+    /// Runs the pre-request handler (if enabled) and returns any headers it attached.
+    /// Returns `nil` when pre-request handling is disabled.
+    func resolvedHeaders(for rawURL: String) async throws -> [String: String]? {
+        guard let handler = preRequestHandler else { return nil }
+        var apiRequest = APIRequest(rawURL: rawURL)
+        try await handler.prepare(&apiRequest)
+        return apiRequest.headers
+    }
+
+    func downloadWithRetry(
+        from url: URL,
+        headers: [String: String]?,
+        requestId: String,
+        maxRetryAttempts: Int,
+        attempt: Int = 1
+    ) async throws -> Data {
+        do {
+            return try await performDownload(from: url, headers: headers)
+        } catch {
+            guard attempt < maxRetryAttempts else { throw error }
+            let delay = TimeInterval(attempt)
+            DDLogWarn("Download attempt \(attempt) failed for \(requestId), retrying in \(delay)s…")
+            try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            return try await downloadWithRetry(
+                from: url,
+                headers: headers,
+                requestId: requestId,
+                maxRetryAttempts: maxRetryAttempts,
+                attempt: attempt + 1
+            )
+        }
+    }
+
+    func performDownload(from url: URL, headers: [String: String]?) async throws -> Data {
+        var afHeaders = HTTPHeaders()
+        headers?.forEach { afHeaders.add(name: $0.key, value: $0.value) }
+
+        return try await withCheckedThrowingContinuation { continuation in
+            session.request(url, headers: afHeaders.isEmpty ? nil : afHeaders)
+                .validate()
+                .responseData { response in
+                    switch response.result {
+                    case .success(let data):  continuation.resume(returning: data)
+                    case .failure(let error): continuation.resume(throwing: error)
+                    }
+                }
+        }
+    }
+}
+
+// MARK: - Array + chunked (private to this file)
+
+private extension Array {
+    func chunked(into size: Int) -> [[Element]] {
+        stride(from: 0, to: count, by: size).map {
+            Array(self[$0..<Swift.min($0 + size, count)])
+        }
+    }
+}
