@@ -5,7 +5,9 @@ import PackageDescription
 
 let package = Package(
     name: "NetworkLayer",
-    platforms: [.iOS(.v16)],
+    // macOS is declared so the test suite can run natively via `swift test`;
+    // the library itself targets iOS.
+    platforms: [.iOS(.v16), .macOS(.v13)],
     products: [
         .library(
             name: "NetworkLayer",
@@ -23,6 +25,14 @@ let package = Package(
                 .product(name: "CocoaLumberjackSwift", package: "CocoaLumberjack")
             ],
             path: "LibraryCore/NetworkLayer/Sources/NetworkLayer"
+        ),
+        .testTarget(
+            name: "NetworkLayerTests",
+            dependencies: [
+                "NetworkLayer",
+                .product(name: "Alamofire", package: "Alamofire")
+            ],
+            path: "LibraryCore/NetworkLayer/Tests/NetworkLayerTests"
         ),
     ]
 )
