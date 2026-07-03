@@ -92,9 +92,8 @@ NetworkLayer is distributed as a Swift package.
 1. **File ▸ Add Package Dependencies…**
 2. Paste the repository URL:
    ```
-   https://github.com/<your-org>/ios-network-layer.git
+   https://github.com/Wassimbouabid/NetworkLayer-iOS.git
    ```
-   > Replace `<your-org>` with the actual host, or use a local path (see below).
 3. Choose the dependency rule (e.g. **Up to Next Major Version** from `1.0.0`).
 4. Add the **NetworkLayer** library product to your app target.
 
@@ -104,13 +103,13 @@ Xcode resolves Alamofire, CocoaLumberjack, and swift-log automatically.
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/<your-org>/ios-network-layer.git", from: "1.0.0")
+    .package(url: "https://github.com/Wassimbouabid/NetworkLayer-iOS.git", from: "1.0.0")
 ],
 targets: [
     .target(
         name: "MyApp",
         dependencies: [
-            .product(name: "NetworkLayer", package: "ios-network-layer")
+            .product(name: "NetworkLayer", package: "NetworkLayer-iOS")
         ]
     )
 ]
@@ -122,11 +121,11 @@ If the package lives alongside your app in the same repository:
 
 ```swift
 dependencies: [
-    .package(path: "../ios-network-layer")
+    .package(path: "../NetworkLayer-iOS")
 ]
 ```
 
-Or drag the `ios-network-layer` folder into your Xcode workspace and add the
+Or drag the `NetworkLayer-iOS` folder into your Xcode workspace and add the
 **NetworkLayer** product to your target.
 
 Then, everywhere you use it:
