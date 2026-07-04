@@ -31,6 +31,7 @@ The third-party dependencies are imported with Swift's `internal import`, so
 - [Customisation reference](#customisation-reference)
 - [Testing](#testing)
 - [Public API surface](#public-api-surface)
+- [License](#license)
 
 ---
 
@@ -502,6 +503,7 @@ All customisation flows through `NetworkServiceBuilder` (each `with…` returns
 | `withErrorResponseParser(_:)` | Error-body parsing | `DefaultErrorResponseParser` |
 | `withErrorHandler(_:)` | Error normalisation | `DefaultNetworkErrorHandler` |
 | `withResponseHandler(_:)` | Validation + decoding | `DefaultResponseHandler` |
+| `withDecoder(_:)` | JSON decoding strategy | `JSONDecoder()` — pass `RobustJSONDecoder()` for lenient decoding |
 | `withLogger(_:)` | Logging backend | `DefaultNetworkLogger` |
 | `withConnectivityListener(_:)` | UI connectivity bridge | none (held weakly) |
 | `loggingEnabled(_:)` | Toggle logging | `true` |
@@ -525,8 +527,16 @@ one per test.
 
 ## Testing
 
-Because everything is protocol-injected, tests build an isolated service without
-touching the Keychain or the network:
+The library ships with a unit-test suite (81 tests) covering the token-refresh
+state machine, error mapping, response validation, robust decoding, and the
+request models. Run it from the package root:
+
+```bash
+swift test
+```
+
+In your own app, everything is protocol-injected, so tests build an isolated
+service without touching the Keychain or the network:
 
 ```swift
 final class InMemoryTokenStorage: TokenStorage { /* … */ }
@@ -562,6 +572,10 @@ Value types:
 Provided implementations (replaceable):
 
 - `KeychainTokenStorage`, `DefaultErrorResponseParser`
+- `RobustJSONDecoder` — a lenient `JSONDecoder` subclass (opt in via
+  `withDecoder(_:)`) with `DefaultValueProvidable` / `TypeMismatchRecoverable`
+  recovery hooks, `EnhancedDecodingError` diagnostics, and
+  `decodeFlexibleDouble/Int/Bool` container helpers for messy payloads
 
 Builders & bootstrap:
 
@@ -569,3 +583,9 @@ Builders & bootstrap:
 
 See [`NetworkLayer.swift`](LibraryCore/NetworkLayer/Sources/NetworkLayer/NetworkLayer.swift)
 for the annotated export list.
+
+---
+
+## License
+
+Released under the [MIT License](LICENSE).
