@@ -1,6 +1,6 @@
 //
 //  MediaDownloadServiceImpl.swift
-//  RevampCarSharing
+//  NetworkLayer
 //
 //  Created by Bouabid Wassim on 30/12/2025.
 //
@@ -99,6 +99,34 @@ private extension MediaDownloadServiceImpl {
         return apiRequest.headers
     }
 
+    /// Returns `true` for transient failures worth retrying (timeouts, dropped
+    /// connections, DNS hiccups, 5xx/408/429). Client errors such as 403/404
+    /// are permanent — retrying them only delays the failure.
+    func isRetryable(_ error: Error) -> Bool {
+        if let afError = error as? AFError {
+            if case .responseValidationFailed(let reason) = afError,
+               case .unacceptableStatusCode(let code) = reason {
+                return code >= 500 || code == 408 || code == 429
+            }
+            if let urlError = afError.underlyingError as? URLError {
+                return isRetryable(urlError)
+            }
+            return false
+        }
+
+        if let urlError = error as? URLError {
+            switch urlError.code {
+            case .timedOut, .networkConnectionLost, .notConnectedToInternet,
+                 .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed:
+                return true
+            default:
+                return false
+            }
+        }
+
+        return false
+    }
+
     func downloadWithRetry(
         from url: URL,
         headers: [String: String]?,
@@ -109,7 +137,7 @@ private extension MediaDownloadServiceImpl {
         do {
             return try await performDownload(from: url, headers: headers)
         } catch {
-            guard attempt < maxRetryAttempts else { throw error }
+            guard attempt < maxRetryAttempts, isRetryable(error) else { throw error }
             let delay = TimeInterval(attempt)
             DDLogWarn("Download attempt \(attempt) failed for \(requestId), retrying in \(delay)s…")
             try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
