@@ -24,7 +24,7 @@ public enum KeychainError: Error {
 /// **Usage:**
 /// By default the namespace is derived from `Bundle.main.bundleIdentifier`.
 /// Override it or provide a completely custom storage via
-/// `NetworkContainer.shared.setTokenStorage(_:)`.
+/// `NetworkServiceBuilder.withTokenStorage(_:)`.
 public final class KeychainTokenStorage: TokenStorage {
 
     // MARK: - Shared Instance
@@ -74,9 +74,19 @@ public final class KeychainTokenStorage: TokenStorage {
         return Date(timeIntervalSince1970: interval)
     }
 
+    /// Leeway subtracted from the expiration date so a token nearing expiry is
+    /// refreshed proactively instead of expiring mid-flight.
+    private static let expiryLeeway: TimeInterval = 60
+
+    /// `true` when the stored access token is past (or within `expiryLeeway` of)
+    /// its expiration date.
+    ///
+    /// When no expiration date is stored (the backend did not return one), the
+    /// token is treated as **valid** — refreshing on every request would flood
+    /// the auth server; rely on a 401 to trigger re-authentication instead.
     public var isTokenExpired: Bool {
-        guard let expiration = tokenExpiration else { return true }
-        return Date() > expiration
+        guard let expiration = tokenExpiration else { return false }
+        return Date() >= expiration.addingTimeInterval(-Self.expiryLeeway)
     }
 
     public var refreshTokenExpiration: Date? {
@@ -153,13 +163,18 @@ private extension KeychainTokenStorage {
 
     /// Saves `value` to the Keychain under `key`.
     ///
+    /// Items are stored with `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`
+    /// so background token refreshes keep working while the device is locked,
+    /// without the item migrating to other devices via backup.
+    ///
     /// - Throws: `KeychainError.saveFailed` when `SecItemAdd` returns a non-success status.
     func saveKeychainValue(_ value: String, for key: String) throws {
         let data = Data(value.utf8)
         let query: [String: Any] = [
-            kSecClass as String:       kSecClassGenericPassword,
-            kSecAttrAccount as String: key,
-            kSecValueData as String:   data
+            kSecClass as String:          kSecClassGenericPassword,
+            kSecAttrAccount as String:    key,
+            kSecValueData as String:      data,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
         ]
 
         // Remove any existing item first to avoid duplicate-item errors.
