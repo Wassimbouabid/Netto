@@ -4,14 +4,14 @@
 import PackageDescription
 
 let package = Package(
-    name: "NetworkLayer",
+    name: "Netto",
     // macOS is declared so the test suite can run natively via `swift test`;
     // the library itself targets iOS.
     platforms: [.iOS(.v16), .macOS(.v13)],
     products: [
         .library(
-            name: "NetworkLayer",
-            targets: ["NetworkLayer"]),
+            name: "Netto",
+            targets: ["Netto"]),
     ],
     dependencies: [
         .package(url: "https://github.com/Alamofire/Alamofire.git", from: "5.9.0"),
@@ -19,20 +19,20 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "NetworkLayer",
+            name: "Netto",
             dependencies: [
                 .product(name: "Alamofire", package: "Alamofire"),
                 .product(name: "CocoaLumberjackSwift", package: "CocoaLumberjack")
             ],
-            path: "LibraryCore/NetworkLayer/Sources/NetworkLayer"
+            path: "LibraryCore/Netto/Sources/Netto"
         ),
         .testTarget(
-            name: "NetworkLayerTests",
+            name: "NettoTests",
             dependencies: [
-                "NetworkLayer",
+                "Netto",
                 .product(name: "Alamofire", package: "Alamofire")
             ],
-            path: "LibraryCore/NetworkLayer/Tests/NetworkLayerTests"
+            path: "LibraryCore/Netto/Tests/NettoTests"
         ),
     ]
 )
