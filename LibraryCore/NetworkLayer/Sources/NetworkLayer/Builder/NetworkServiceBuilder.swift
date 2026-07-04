@@ -39,6 +39,7 @@ public final class NetworkServiceBuilder {
     private var customResponseHandler: (any ResponseHandler)?
     private var customLogger: (any NetworkLogger)?
     private var connectivityListener: (any ConnectivityListener)?
+    private var customDecoder: JSONDecoder?
     private var enableLogging: Bool = true
     private var redactSensitiveData: Bool = true
 
@@ -115,6 +116,23 @@ public final class NetworkServiceBuilder {
         return self
     }
 
+    /// Replaces the plain `JSONDecoder` used by the default response handler.
+    ///
+    /// Use this to set date/key decoding strategies, or to opt in to the
+    /// lenient `RobustJSONDecoder` shipped with this library:
+    /// ```swift
+    /// NetworkServiceBuilder(configuration: config)
+    ///     .withDecoder(RobustJSONDecoder())
+    ///     .build()
+    /// ```
+    /// - Note: This has no effect when a custom response handler is supplied
+    ///   via `withResponseHandler(_:)`.
+    @discardableResult
+    public func withDecoder(_ decoder: JSONDecoder) -> Self {
+        customDecoder = decoder
+        return self
+    }
+
     /// Replaces the default `DefaultNetworkLogger` with a custom implementation.
     ///
     /// Use this to integrate with OSLog, SwiftyBeaver, your analytics pipeline, etc.
@@ -170,7 +188,10 @@ public final class NetworkServiceBuilder {
         let errorHandler = customErrorHandler ?? DefaultNetworkErrorHandler(
             errorResponseParser: errorResponseParser ?? DefaultErrorResponseParser()
         )
-        let responseHandler   = customResponseHandler ?? DefaultResponseHandler(errorHandler: errorHandler)
+        let responseHandler   = customResponseHandler ?? DefaultResponseHandler(
+            errorHandler: errorHandler,
+            decoder: customDecoder ?? JSONDecoder()
+        )
         let preRequestHandler = PreRequestHandlerImpl(
             tokenStorage:    storage,
             refreshProvider: tokenRefreshProvider

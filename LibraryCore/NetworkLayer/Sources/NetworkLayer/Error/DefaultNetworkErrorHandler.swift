@@ -1,6 +1,6 @@
 //
 //  DefaultNetworkErrorHandler.swift
-//  RevampCarSharing
+//  NetworkLayer
 //
 //  Created by Bouabid Wassim on 26/12/2025.
 //
@@ -76,6 +76,12 @@ final class DefaultNetworkErrorHandler: NetworkErrorHandler {
     }
 
     func handleDecodingError(_ error: Error) -> NetworkError {
+        // RobustJSONDecoder rethrows failures as EnhancedDecodingError with
+        // richer context — surface its message directly.
+        if let enhanced = error as? EnhancedDecodingError {
+            return .decodingError(enhanced.errorDescription ?? "Decoding failed")
+        }
+
         if let decodingError = error as? DecodingError {
             // extract helpful information from decoding errors
             let errorMessage: String

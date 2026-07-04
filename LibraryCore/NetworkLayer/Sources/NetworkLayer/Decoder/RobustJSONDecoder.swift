@@ -1,6 +1,6 @@
 //
 //  RobustJSONDecoder.swift
-//  RevampCarSharing
+//  NetworkLayer
 //
 //  Created by Bouabid Wassim on 24/12/2025.
 //
@@ -9,7 +9,7 @@ import Foundation
 
 // MARK: - Flexible Decoding Extensions
 
-extension KeyedDecodingContainer {
+public extension KeyedDecodingContainer {
     /// Decodes a Double value that might be represented as an Int in JSON or might be null
     func decodeFlexibleDouble(forKey key: Key) -> Double? {
         // First try to decode as Double
@@ -89,8 +89,8 @@ extension KeyedDecodingContainer {
 // MARK: - Custom JSON Decoder
 
 /// A decoder that doesn't crash on typical JSON decoding errors
-class RobustJSONDecoder: JSONDecoder {
-    override func decode<T>(_ type: T.Type, from data: Data) throws -> T where T : Decodable {
+public class RobustJSONDecoder: JSONDecoder {
+    override public func decode<T>(_ type: T.Type, from data: Data) throws -> T where T : Decodable {
         do {
             return try super.decode(type, from: data)
         } catch let decodingError as DecodingError {
@@ -162,12 +162,12 @@ class RobustJSONDecoder: JSONDecoder {
 // MARK: - Protocols for Default Values and Type Conversion
 
 /// Protocol for types that can create themselves with default values
-protocol DefaultValueProvidable {
+public protocol DefaultValueProvidable {
     static func createWithDefaults(from data: Data, error: DecodingError, using decoder: JSONDecoder) throws -> Any
 }
 
 /// Protocol for types that can recover from type mismatches
-protocol TypeMismatchRecoverable {
+public protocol TypeMismatchRecoverable {
     static func recoverFromTypeMismatch(from data: Data, expected: Any.Type, context: DecodingError.Context, using decoder: JSONDecoder) throws -> Any
 }
 
@@ -204,13 +204,13 @@ struct DefaultValueProvider {
 // MARK: - Enhanced Error Types
 
 /// Enhanced decoding errors with better context
-enum EnhancedDecodingError: Error, LocalizedError {
+public enum EnhancedDecodingError: Error, LocalizedError {
     case enhanceValueNotFound(Any.Type, context: DecodingError.Context, message: String)
     case enhanceKeyNotFound(CodingKey, context: DecodingError.Context, message: String)
     case enhanceTypeMismatch(Any.Type, context: DecodingError.Context, message: String)
     case enhanceDataCorrupted(context: DecodingError.Context, message: String)
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .enhanceValueNotFound(let type, let context, let message):
             return "\(message). Expected type: \(type). Path: \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"

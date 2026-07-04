@@ -48,8 +48,8 @@
 //
 //  Default implementations (concrete; can be replaced via builders)
 //    • KeychainTokenStorage          – Keychain-backed token storage
-//    • DefaultTokenRefreshProvider   – calls POST /api/gw/refreshtoken; maps response to TokenRefreshResult
 //    • DefaultErrorResponseParser    – parses common error/message/errorMessage JSON keys
+//    • RobustJSONDecoder             – lenient JSONDecoder; opt in via NetworkServiceBuilder.withDecoder(_:)
 //
 //  Builders (construct services with fluent configuration)
 //    • NetworkServiceBuilder   – wires and builds a NetworkService
