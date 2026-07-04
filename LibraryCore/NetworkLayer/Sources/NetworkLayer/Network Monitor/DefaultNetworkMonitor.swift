@@ -1,6 +1,6 @@
 //
 //  DefaultNetworkMonitor.swift
-//  RevampCarSharing
+//  NetworkLayer
 //
 //  Created by Bouabid Wassim on 27/12/2025.
 //
@@ -26,13 +26,22 @@ final class DefaultNetworkMonitor: NetworkMonitor {
     /// Lock for thread-safe access to handlers.
     private let handlersLock = NSLock()
 
-    /// Current connectivity status.
-    private(set) var isConnected: Bool = false {
-        didSet {
-            if oldValue != isConnected {
-                notifyHandlers()
-            }
-        }
+    /// Backing storage for `isConnected`, written on `monitorQueue` and read
+    /// from arbitrary threads — always accessed under `stateLock`.
+    ///
+    /// Starts `true` (optimistic): `NWPathMonitor` delivers its first path
+    /// update asynchronously after `start`, and a request fired in that window
+    /// must not be rejected with a spurious `noInternet`.
+    private var _isConnected = true
+
+    /// Lock protecting `_isConnected`.
+    private let stateLock = NSLock()
+
+    /// Current connectivity status. Thread-safe.
+    var isConnected: Bool {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return _isConnected
     }
 
     /// Flag indicating whether monitoring is active.
@@ -101,7 +110,16 @@ private extension DefaultNetworkMonitor {
             guard let self = self else { return }
 
             // update the connection status based on the path
-            self.isConnected = path.status == .satisfied
+            let connected = path.status == .satisfied
+
+            self.stateLock.lock()
+            let changed = self._isConnected != connected
+            self._isConnected = connected
+            self.stateLock.unlock()
+
+            if changed {
+                self.notifyHandlers()
+            }
 
             // log the connection type
             self.logConnectionType(path)
