@@ -1,13 +1,28 @@
-# NetworkLayer
+<p align="center">
+  <img src="assets/netto-logo.png" alt="Netto" width="320">
+</p>
 
-A protocol-oriented, dependency-injected networking layer for iOS, built on top of
+<p align="center">
+  A protocol-oriented, dependency-injected networking layer for iOS, built on Alamofire.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/iOS-16%2B-blue" alt="iOS 16+">
+  <img src="https://img.shields.io/badge/Swift-5.9%2B-orange" alt="Swift 5.9+">
+  <img src="https://img.shields.io/badge/SPM-compatible-brightgreen" alt="SPM compatible">
+  <img src="https://img.shields.io/badge/License-MIT-lightgrey" alt="MIT License">
+</p>
+
+# Netto
+
+**Netto** is a protocol-oriented, dependency-injected networking layer for iOS, built on top of
 [Alamofire](https://github.com/Alamofire/Alamofire). It gives your app a clean,
 testable API surface for making requests, downloading media, handling auth-token
 refresh, monitoring connectivity, and normalising errors — **without ever leaking
 Alamofire types into your application code**.
 
 The third-party dependencies are imported with Swift's `internal import`, so
-`import NetworkLayer` is all your app ever needs. You depend on protocols
+`import Netto` is all your app ever needs. You depend on protocols
 (`NetworkService`, `MediaDownloadService`, …), never on concrete implementations.
 
 ---
@@ -79,24 +94,24 @@ Package Manager — you do **not** add them to your app yourself.
 | [swift-log](https://github.com/apple/swift-log) | — | `1.10.1` | Transitive dependency of CocoaLumberjack. Resolved automatically. |
 
 Because both direct dependencies are consumed through `internal import`, none of
-their symbols appear in NetworkLayer's public API. Your app links them transitively
-but should code exclusively against NetworkLayer's own types.
+their symbols appear in Netto's public API. Your app links them transitively
+but should code exclusively against Netto's own types.
 
 ---
 
 ## Installation
 
-NetworkLayer is distributed as a Swift package.
+Netto is distributed as a Swift package.
 
 ### Xcode (recommended)
 
 1. **File ▸ Add Package Dependencies…**
 2. Paste the repository URL:
    ```
-   https://github.com/Wassimbouabid/NetworkLayer-iOS.git
+   https://github.com/Wassimbouabid/Netto.git
    ```
 3. Choose the dependency rule (e.g. **Up to Next Major Version** from `1.0.0`).
-4. Add the **NetworkLayer** library product to your app target.
+4. Add the **Netto** library product to your app target.
 
 Xcode resolves Alamofire, CocoaLumberjack, and swift-log automatically.
 
@@ -104,13 +119,13 @@ Xcode resolves Alamofire, CocoaLumberjack, and swift-log automatically.
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Wassimbouabid/NetworkLayer-iOS.git", from: "1.0.0")
+    .package(url: "https://github.com/Wassimbouabid/Netto.git", from: "1.0.0")
 ],
 targets: [
     .target(
         name: "MyApp",
         dependencies: [
-            .product(name: "NetworkLayer", package: "NetworkLayer-iOS")
+            .product(name: "Netto", package: "Netto")
         ]
     )
 ]
@@ -122,17 +137,17 @@ If the package lives alongside your app in the same repository:
 
 ```swift
 dependencies: [
-    .package(path: "../NetworkLayer-iOS")
+    .package(path: "../Netto")
 ]
 ```
 
-Or drag the `NetworkLayer-iOS` folder into your Xcode workspace and add the
-**NetworkLayer** product to your target.
+Or drag the `Netto` folder into your Xcode workspace and add the
+**Netto** product to your target.
 
 Then, everywhere you use it:
 
 ```swift
-import NetworkLayer
+import Netto
 ```
 
 ---
@@ -140,8 +155,8 @@ import NetworkLayer
 ## Architecture
 
 ```
-LibraryCore/NetworkLayer/Sources/NetworkLayer/
-├── NetworkLayer.swift            # Public API surface (documentation + exports)
+LibraryCore/Netto/Sources/Netto/
+├── Netto.swift                  # Public API surface (documentation + exports)
 ├── Builder/                      # Fluent builders + app-wide container
 │   ├── NetworkServiceBuilder     #   wires and builds a NetworkService
 │   ├── MediaServiceBuilder       #   wires and builds a MediaDownloadService
@@ -183,7 +198,7 @@ The dependency graph is wired for you by the builders — you interact only with
 Configure the layer **once** at app startup, before making any request.
 
 ```swift
-import NetworkLayer
+import Netto
 
 @main
 struct MyApp: App {
@@ -581,7 +596,7 @@ Builders & bootstrap:
 
 - `NetworkServiceBuilder`, `MediaServiceBuilder`, `NetworkContainer`
 
-See [`NetworkLayer.swift`](LibraryCore/NetworkLayer/Sources/NetworkLayer/NetworkLayer.swift)
+See [`Netto.swift`](LibraryCore/Netto/Sources/Netto/Netto.swift)
 for the annotated export list.
 
 ---
