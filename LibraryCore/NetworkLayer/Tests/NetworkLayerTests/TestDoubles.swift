@@ -96,13 +96,18 @@ final class CountingRefreshProvider: TokenRefreshProvider, @unchecked Sendable {
         return _callCount
     }
 
-    func refreshTokens() async throws -> TokenRefreshResult {
-        let shouldFail: Bool
+    /// Synchronous so the lock is never held across a suspension point.
+    private func recordCall() -> Bool {
         lock.lock()
+        defer { lock.unlock() }
         _callCount += 1
-        shouldFail = remainingFailures > 0
-        if shouldFail { remainingFailures -= 1 }
-        lock.unlock()
+        guard remainingFailures > 0 else { return false }
+        remainingFailures -= 1
+        return true
+    }
+
+    func refreshTokens() async throws -> TokenRefreshResult {
+        let shouldFail = recordCall()
 
         if delayNanoseconds > 0 {
             try await Task.sleep(nanoseconds: delayNanoseconds)
