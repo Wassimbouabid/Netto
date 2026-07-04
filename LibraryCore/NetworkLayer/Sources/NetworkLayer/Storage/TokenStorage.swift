@@ -7,7 +7,7 @@ import Foundation
 /// Defines the contract for persisting and retrieving authentication tokens.
 ///
 /// Implement this protocol to provide a custom storage backend (e.g. an in-memory
-/// store for tests) and register it via `NetworkContainer.shared.setTokenStorage(_:)`.
+/// store for tests) and register it via `NetworkServiceBuilder.withTokenStorage(_:)`.
 public protocol TokenStorage {
 
     /// The current access token, or `nil` if none is stored.

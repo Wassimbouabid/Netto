@@ -1,6 +1,6 @@
 //
 //  DefaultNetworkLogger.swift
-//  RevampCarSharing
+//  NetworkLayer
 //
 //  Created by Bouabid Wassim on 28/12/2025.
 //
@@ -117,7 +117,7 @@ final class DefaultNetworkLogger: NetworkLogger {
         "account_id"
     ]
 
-    /// Initializes the log3KBT with a specific configuration.
+    /// Initializes the logger with a specific configuration.
     ///
     /// - Parameters:
     ///   - logLevel: The level of detail to include in logs (default: `.full`).

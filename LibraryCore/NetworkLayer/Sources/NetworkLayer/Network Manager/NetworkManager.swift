@@ -9,7 +9,8 @@ internal import CocoaLumberjackSwift
 /// Concrete `NetworkService` powered by Alamofire.
 ///
 /// Instantiated and lifecycle-managed by `NetworkContainer`. Do not create
-/// instances directly — use `NetworkContainer.shared.makeNetworkService()`.
+/// instances directly — obtain one via `NetworkServiceBuilder.build()`
+/// or `NetworkContainer.shared.getNetworkService()`.
 ///
 /// **Timeout priority**
 /// 1. Per-endpoint `timeout` (if set on `APIEndpoint`)

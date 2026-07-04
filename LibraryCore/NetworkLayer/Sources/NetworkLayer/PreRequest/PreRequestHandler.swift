@@ -24,7 +24,9 @@ public struct TokenRefreshResult: Sendable {
 /// Implement this protocol in the consuming app and register it at startup:
 ///
 /// ```swift
-/// NetworkContainer.shared.setTokenRefreshProvider(MyRefreshProvider())
+/// NetworkServiceBuilder(configuration: config)
+///     .withTokenRefreshProvider(MyRefreshProvider())
+///     .build()
 /// ```
 ///
 /// The implementation is responsible for calling the auth server.

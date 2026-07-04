@@ -83,7 +83,7 @@ actor PreRequestHandlerImpl: PreRequestHandler {
         guard let provider = refreshProvider else {
             throw NetworkError.authenticationRequired(
                 message: "Token refresh required but no TokenRefreshProvider is registered. " +
-                "Call NetworkContainer.shared.setTokenRefreshProvider(_:) at app startup.", headers: nil
+                "Register one via NetworkServiceBuilder.withTokenRefreshProvider(_:) at app startup.", headers: nil
             )
         }
 

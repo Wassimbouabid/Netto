@@ -13,7 +13,8 @@ internal import Alamofire
 /// Create one instance at app startup and register it with `NetworkContainer`:
 ///
 /// ```swift
-/// NetworkContainer.shared.configure(with: NetworkConfiguration(
+/// NetworkContainer.shared.configure(using: NetworkServiceBuilder(
+///     configuration: NetworkConfiguration(
 ///     baseURL: URL(string: "https://api.example.com")!
 /// ))
 /// ```
